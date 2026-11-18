@@ -2,7 +2,14 @@
 
 import unittest
 
-import main
+import matplotlib
+
+matplotlib.use("Agg")  # rysowanie bez okna (testy działają też bez ekranu)
+import matplotlib.pyplot as plt  # noqa: E402
+import networkx as nx  # noqa: E402
+import numpy as np  # noqa: E402
+
+import main  # noqa: E402
 
 
 class TestGrafWiedzy(unittest.TestCase):
@@ -27,6 +34,17 @@ class TestGrafWiedzy(unittest.TestCase):
         self.assertEqual(main.przedmioty_wydzialu(self.g, "Wydział Informatyki"),
                          ["Knowledge Representation", "Machine Learning", "Programowanie w Pythonie"])
 
+    def test_przedmioty_wydzialu_gdy_pracownik_prowadzi_kilka(self):
+        # Maria Lewandowska (jedyna na Wydziale Matematyki) prowadzi 3 przedmioty.
+        self.assertEqual(main.przedmioty_wydzialu(self.g, "Wydział Matematyki"),
+                         ["Algebra Liniowa", "Analiza Matematyczna", "Statystyka"])
+
+    def test_przedmioty_wydzialu_bez_powtorzen(self):
+        # Dwie osoby z Wydziału Informatyki prowadzą ten sam przedmiot -> przedmiot raz.
+        self.g.add_edge("Anna Nowak", "Knowledge Representation", relacja="PROWADZI")
+        self.assertEqual(main.przedmioty_wydzialu(self.g, "Wydział Informatyki"),
+                         ["Knowledge Representation", "Machine Learning", "Programowanie w Pythonie"])
+
     def test_zapisy_piotra_wisniewskiego(self):
         self.assertEqual(main.zapisy_studenta(self.g, "Piotr Wiśniewski"),
                          ["Knowledge Representation", "Machine Learning"])
@@ -46,6 +64,35 @@ class TestGrafWiedzy(unittest.TestCase):
         self.assertEqual(main.przedmioty_kierunku(self.g, "Informatyka"),
                          ["Knowledge Representation", "Machine Learning",
                           "Programowanie w Pythonie", "Statystyka"])
+
+    def test_nieznany_obiekt_daje_pusta_odpowiedz(self):
+        for zapytanie in (main.kto_prowadzi, main.przedmioty_wydzialu, main.zapisy_studenta,
+                          main.wymagania, main.wspolpracownicy, main.przedmioty_kierunku):
+            with self.subTest(zapytanie=zapytanie.__name__):
+                self.assertEqual(zapytanie(self.g, "Fizyka"), [])
+
+
+class TestRysunek(unittest.TestCase):
+    def test_zadna_krawedz_nie_przechodzi_pod_obcym_wezlem(self):
+        g = main.zbuduj_graf()
+        pozycje = main.rozmiesc_wezly(g)
+        fig, ax = plt.subplots(figsize=(16, 11), dpi=120)  # jak w rysuj_graf
+        nx.draw_networkx_nodes(g, pozycje, ax=ax, node_size=main.ROZMIAR_WEZLA)
+        fig.canvas.draw()
+        piksele = {n: ax.transData.transform(pozycje[n]) for n in g}
+        plt.close(fig)
+        promien = main.ROZMIAR_WEZLA ** 0.5 / 2 * fig.dpi / 72  # node_size to pole w pt²
+
+        for a, b in g.edges:
+            A, B = piksele[a], piksele[b]
+            for n in g:
+                if n in (a, b):
+                    continue
+                # najbliższy punkt odcinka A-B do środka węzła n
+                t = np.clip(np.dot(piksele[n] - A, B - A) / np.dot(B - A, B - A), 0, 1)
+                odleglosc = np.linalg.norm(A + t * (B - A) - piksele[n])
+                with self.subTest(krawedz=(a, b), wezel=n):
+                    self.assertGreater(odleglosc, promien)
 
 
 if __name__ == "__main__":

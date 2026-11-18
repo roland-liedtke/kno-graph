@@ -84,6 +84,8 @@ def dokad(g, wezel, relacja):
 
     Przykład: dokad(g, "Jan Kowalski", "PROWADZI") -> przedmioty Jana.
     """
+    if wezel not in g:
+        return []  # nieznany obiekt — brak odpowiedzi zamiast błędu
     return [cel for cel in g.successors(wezel) if g.edges[wezel, cel]["relacja"] == relacja]
 
 
@@ -92,6 +94,8 @@ def skad(g, wezel, relacja):
 
     Przykład: skad(g, "Jan Kowalski", "ZATRUDNIA") -> wydział Jana.
     """
+    if wezel not in g:
+        return []  # nieznany obiekt — brak odpowiedzi zamiast błędu
     return [zrodlo for zrodlo in g.predecessors(wezel) if g.edges[zrodlo, wezel]["relacja"] == relacja]
 
 
@@ -162,23 +166,32 @@ KOLORY = {  # każdy typ obiektu ma własny kolor węzła
     "Przedmiot": "skyblue",
     "Kierunek": "plum",
 }
+ROZMIAR_WEZLA = 1600
+
+
+def rozmiesc_wezly(g):
+    """Zwraca pozycje węzłów na rysunku (słownik: węzeł -> (x, y)).
+
+    spring_layout rozmieszcza węzły jak kulki połączone sprężynami.
+    seed = zawsze ten sam układ; k = odstępy między węzłami. Wartości dobrane tak,
+    żeby żadna strzałka nie przechodziła pod obcym węzłem (sprawdza to test).
+    """
+    return nx.spring_layout(g, seed=241, k=2.2)
 
 
 def rysuj_graf(g):
     """Rysuje graf: kolor węzła = typ obiektu, napis na strzałce = relacja."""
     plt.figure(figsize=(16, 11))
-    # spring_layout rozmieszcza węzły jak kulki na sprężynach; seed = zawsze ten sam układ,
-    # k = większe odstępy między węzłami.
-    pozycje = nx.spring_layout(g, seed=98, k=1.6)
+    pozycje = rozmiesc_wezly(g)
 
     # Węzły rysujemy typ po typie, żeby każdy typ miał swój kolor i pozycję w legendzie.
     for typ, kolor in KOLORY.items():
         wezly = [n for n, t in g.nodes(data="type") if t == typ]
         nx.draw_networkx_nodes(g, pozycje, nodelist=wezly, node_color=kolor,
-                               node_size=2200, label=typ)
+                               node_size=ROZMIAR_WEZLA, label=typ)
 
     nx.draw_networkx_labels(g, pozycje, font_size=8)  # nazwy węzłów
-    nx.draw_networkx_edges(g, pozycje, node_size=2200, arrowsize=15, edge_color="gray")
+    nx.draw_networkx_edges(g, pozycje, node_size=ROZMIAR_WEZLA, arrowsize=15, edge_color="gray")
     nx.draw_networkx_edge_labels(g, pozycje, edge_labels=nx.get_edge_attributes(g, "relacja"),
                                  font_size=7, font_color="darkred")  # nazwy relacji
 
