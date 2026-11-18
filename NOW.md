@@ -1,11 +1,11 @@
 # NOW — stan projektu
-*Ostatnia aktualizacja: 2026-11-18 19:45*
+*Ostatnia aktualizacja: 2026-11-18 19:31*
 
 ## Stan
 - Szkielet repo: `CLAUDE.md`, `NOW.md`, `CONTRIBUTING.md`, `.gitignore`, `requirements.txt`.
 
 ## W toku
-- `main.py` (graf 16 obiektów / 25 faktów, 6 zapytań, wizualizacja) + `test_main.py` — PR #1 (`feat/graf-wiedzy-uczelni`), po poprawkach z recenzji (`zmiany-wymagane`) czeka na ponowną recenzję.
+- `main.py` (graf 16 obiektów / 25 faktów, 6 zapytań, wizualizacja) + `test_main.py` — PR #1 (`feat/graf-wiedzy-uczelni`), zatwierdzony (recenzja #22); dopisany commit z sugestiami nieblokującymi czeka na ponowną recenzję.
 
 ## Dalej
 - (brak)

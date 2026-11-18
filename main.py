@@ -190,7 +190,10 @@ def rysuj_graf(g):
         nx.draw_networkx_nodes(g, pozycje, nodelist=wezly, node_color=kolor,
                                node_size=ROZMIAR_WEZLA, label=typ)
 
-    nx.draw_networkx_labels(g, pozycje, font_size=8)  # nazwy węzłów
+    # Nazwy węzłów w dwóch liniach ("Tomasz\nZieliński"), żeby mieściły się w kółkach
+    # i strzałki nie wchodziły w napisy.
+    napisy = {n: n.replace(" ", "\n", 1) for n in g}
+    nx.draw_networkx_labels(g, pozycje, labels=napisy, font_size=8)
     nx.draw_networkx_edges(g, pozycje, node_size=ROZMIAR_WEZLA, arrowsize=15, edge_color="gray")
     nx.draw_networkx_edge_labels(g, pozycje, edge_labels=nx.get_edge_attributes(g, "relacja"),
                                  font_size=7, font_color="darkred")  # nazwy relacji

@@ -76,7 +76,10 @@ class TestRysunek(unittest.TestCase):
     def test_zadna_krawedz_nie_przechodzi_pod_obcym_wezlem(self):
         g = main.zbuduj_graf()
         pozycje = main.rozmiesc_wezly(g)
-        fig, ax = plt.subplots(figsize=(16, 11), dpi=120)  # jak w rysuj_graf
+        # Geometria przybliżona: ten sam rozmiar figury, dpi i węzły co w rysuj_graf, ale bez
+        # tight_layout, legendy i axis("off"), które lekko przesuwają piksele. Na prawdziwym
+        # rysunku najbliższa krawędź jest ok. 1,7 promienia od obcego węzła, więc zapas wystarcza.
+        fig, ax = plt.subplots(figsize=(16, 11), dpi=120)
         nx.draw_networkx_nodes(g, pozycje, ax=ax, node_size=main.ROZMIAR_WEZLA)
         fig.canvas.draw()
         piksele = {n: ax.transData.transform(pozycje[n]) for n in g}
