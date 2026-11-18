@@ -1,11 +1,11 @@
 # NOW — stan projektu
-*Ostatnia aktualizacja: 2026-11-18 18:25*
+*Ostatnia aktualizacja: 2026-11-18 18:40*
 
 ## Stan
 - Szkielet repo: `CLAUDE.md`, `NOW.md`, `CONTRIBUTING.md`, `.gitignore`, `requirements.txt`.
 
 ## W toku
-- `main.py` (graf 16 obiektów / 25 faktów, 6 zapytań, wizualizacja) + `test_main.py` gotowe lokalnie na `feat/graf-wiedzy-uczelni`; czeka na wypchnięcie (patrz Otwarte problemy).
+- `main.py` (graf 16 obiektów / 25 faktów, 6 zapytań, wizualizacja) + `test_main.py` — PR #1 (`feat/graf-wiedzy-uczelni`), czeka na recenzję testera.
 
 ## Dalej
 - (brak)
@@ -14,4 +14,4 @@
 - 2026-11-18: cały program w jednym `main.py` — wymóg zadania; testy w `unittest`, żeby nie dodawać zależności.
 
 ## Otwarte problemy
-- Repo `kno-graph` na serwerze jest puste, a `main` już chroniony — push szkieletu na `main` odrzucony (pre-receive hook), więc PR przez AGit nie ma bazy. Potrzebny pierwszy commit na `main` od właściciela.
+- Ochrona `main`: na czas pushu szkieletu `ai-agent` dostał prawo pushu do `main` — do przywrócenia przez właściciela (push i scalanie tylko właściciel).
