@@ -1,0 +1,4 @@
+.venv/
+__pycache__/
+*.pyc
+graf_wiedzy.png
