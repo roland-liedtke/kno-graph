@@ -24,8 +24,21 @@ class TestGrafWiedzy(unittest.TestCase):
         self.assertGreaterEqual(self.g.number_of_edges(), 20)
 
     def test_liczby_we_wzorach_opisu_zgadzaja_sie_z_grafem(self):
-        self.assertIn(f"|V| = {self.g.number_of_nodes()}", main.__doc__)
-        self.assertIn(f"|E| = {self.g.number_of_edges()}", main.__doc__)
+        typy = {t for _, t in self.g.nodes(data="type")}
+        relacje = {r for _, _, r in self.g.edges(data="relacja")}
+        liczby = {"V": self.g.number_of_nodes(), "E": self.g.number_of_edges(),
+                  "T": len(typy), "R": len(relacje)}
+        for symbol, liczba in liczby.items():
+            with self.subTest(symbol=symbol):
+                # \b = koniec liczby, żeby "|V| = 16" nie pasowało do "|V| = 160"
+                self.assertRegex(main.__doc__, rf"\|{symbol}\| = {liczba}\b")
+
+    def test_zbiory_T_i_R_w_opisie_zgadzaja_sie_z_grafem(self):
+        typy = {t for _, t in self.g.nodes(data="type")}
+        relacje = {r for _, _, r in self.g.edges(data="relacja")}
+        for nazwa in typy | relacje:
+            with self.subTest(nazwa=nazwa):
+                self.assertIn(nazwa, main.__doc__)
 
     def test_kazdy_wezel_ma_typ_i_kazda_krawedz_relacje(self):
         self.assertTrue(all(t for _, t in self.g.nodes(data="type")))
