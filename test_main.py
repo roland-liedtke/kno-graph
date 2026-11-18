@@ -23,6 +23,10 @@ class TestGrafWiedzy(unittest.TestCase):
         self.assertGreaterEqual(len({r for _, _, r in self.g.edges(data="relacja")}), 6)
         self.assertGreaterEqual(self.g.number_of_edges(), 20)
 
+    def test_liczby_we_wzorach_opisu_zgadzaja_sie_z_grafem(self):
+        self.assertIn(f"|V| = {self.g.number_of_nodes()}", main.__doc__)
+        self.assertIn(f"|E| = {self.g.number_of_edges()}", main.__doc__)
+
     def test_kazdy_wezel_ma_typ_i_kazda_krawedz_relacje(self):
         self.assertTrue(all(t for _, t in self.g.nodes(data="type")))
         self.assertTrue(all(r for _, _, r in self.g.edges(data="relacja")))
