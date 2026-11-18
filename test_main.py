@@ -1,5 +1,6 @@
 """Testy grafu wiedzy: wymagania zadania i odpowiedzi na 6 pytań."""
 
+import re
 import unittest
 
 import matplotlib
@@ -15,6 +16,8 @@ import main  # noqa: E402
 class TestGrafWiedzy(unittest.TestCase):
     def setUp(self):
         self.g = main.zbuduj_graf()
+        self.typy = {t for _, t in self.g.nodes(data="type")}
+        self.relacje = {r for _, _, r in self.g.edges(data="relacja")}
 
     def test_graf_spelnia_minimalne_wymagania(self):
         self.assertTrue(self.g.is_directed())
@@ -24,21 +27,21 @@ class TestGrafWiedzy(unittest.TestCase):
         self.assertGreaterEqual(self.g.number_of_edges(), 20)
 
     def test_liczby_we_wzorach_opisu_zgadzaja_sie_z_grafem(self):
-        typy = {t for _, t in self.g.nodes(data="type")}
-        relacje = {r for _, _, r in self.g.edges(data="relacja")}
         liczby = {"V": self.g.number_of_nodes(), "E": self.g.number_of_edges(),
-                  "T": len(typy), "R": len(relacje)}
+                  "T": len(self.typy), "R": len(self.relacje)}
         for symbol, liczba in liczby.items():
             with self.subTest(symbol=symbol):
                 # \b = koniec liczby, żeby "|V| = 16" nie pasowało do "|V| = 160"
                 self.assertRegex(main.__doc__, rf"\|{symbol}\| = {liczba}\b")
 
     def test_zbiory_T_i_R_w_opisie_zgadzaja_sie_z_grafem(self):
-        typy = {t for _, t in self.g.nodes(data="type")}
-        relacje = {r for _, _, r in self.g.edges(data="relacja")}
-        for nazwa in typy | relacje:
-            with self.subTest(nazwa=nazwa):
-                self.assertIn(nazwa, main.__doc__)
+        for symbol, w_grafie in (("T", self.typy), ("R", self.relacje)):
+            with self.subTest(symbol=symbol):
+                # zawartość wyliczenia "T = {...}" z opisu (może zajmować kilka linii)
+                wyliczenie = re.search(rf"{symbol} = \{{(.*?)\}}", main.__doc__, re.S)
+                self.assertIsNotNone(wyliczenie)
+                w_opisie = {nazwa.strip() for nazwa in wyliczenie.group(1).split(",")}
+                self.assertEqual(w_opisie, w_grafie)
 
     def test_kazdy_wezel_ma_typ_i_kazda_krawedz_relacje(self):
         self.assertTrue(all(t for _, t in self.g.nodes(data="type")))

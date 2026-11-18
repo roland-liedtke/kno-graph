@@ -1,14 +1,14 @@
 # NOW — stan projektu
-*Ostatnia aktualizacja: 2026-11-18 20:40*
+*Ostatnia aktualizacja: 2026-11-18 20:52*
 
 ## Stan
 - `main.py` na `main` (PR #1): graf 16 obiektów (5 typów) / 25 faktów (6 typów relacji), 6 zapytań z odpowiedziami w konsoli, wizualizacja `spring_layout` z legendą i etykietami krawędzi, kopia rysunku w `graf_wiedzy.png`.
 - Opisy w `main.py` mają model `G = (V, E)` i wzory zapytań na zbiorach; nagłówek w konsoli podaje |V|, |E|, |T|, |R| (PR #2).
-- `test_main.py`: 14 testów `unittest` — wymagania grafu, odpowiedzi na 6 pytań, nieznany obiekt, deduplikacja, brak krawędzi pod obcym węzłem (`TestRysunek`), zgodność |V| i |E| w opisie z grafem. Wszystkie przechodzą.
+- `test_main.py`: 15 testów `unittest` — wymagania grafu, odpowiedzi na 6 pytań, nieznany obiekt, deduplikacja, brak krawędzi pod obcym węzłem (`TestRysunek`), zgodność |V|, |E|, |T|, |R| i wyliczeń `T`, `R` w opisie z grafem (PR #3). Wszystkie przechodzą.
 - Sprawdzone tylko backendem Agg i w pliku PNG; okna `plt.show()` na ekranie nikt nie oglądał (maszyny bez ekranu).
 
 ## W toku
-- PR #3 (`test/wzory-w-opisie`): test zgodności wzorów z grafem obejmuje też |T|, |R| i nazwy typów oraz relacji (sugestie z recenzji PR #2) — czeka na recenzję.
+- PR `test/scisle-zbiory-w-opisie`: test porównuje zawartość wyliczeń `T = {…}` i `R = {…}` z grafem (`assertEqual`), a nie samą obecność nazw w opisie (sugestia z recenzji PR #3) — czeka na recenzję.
 
 ## Dalej
 - Właściciel: uruchomić `main.py` u siebie i obejrzeć okno z rysunkiem przed zaliczeniem.
@@ -21,4 +21,3 @@
 
 ## Otwarte problemy
 - Opis scalonego PR #1 jest nieaktualny (`seed=98`, „dwie strzałki pod węzłami”, 9 testów) — do poprawienia przez właściciela w WWW, jeśli ma zostać w historii.
-- Lokalny klon testera ma `main` ze starą historią bez wspólnych commitów z `origin/main` — właściciel wyrówna go ręcznie.
