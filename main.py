@@ -23,7 +23,7 @@ import networkx as nx
 # 1. BUDOWA GRAFU WIEDZY
 # ---------------------------------------------------------------------------
 
-def zbuduj_graf():
+def build_graph():
     """Tworzy graf wiedzy uczelni i zwraca go."""
     # DiGraph = graf skierowany: każda krawędź ma kierunek (od -> do),
     # np. "Wydział Informatyki" --ZATRUDNIA--> "Jan Kowalski".
@@ -31,7 +31,7 @@ def zbuduj_graf():
 
     # --- Węzły (obiekty) = zbiór V. Atrybut "type" to typ(v): klasa obiektu. ---
     # 5 typów: Wydział, Pracownik, Student, Przedmiot, Kierunek; razem 16 obiektów.
-    obiekty = {
+    objects = {
         "Wydział": ["Wydział Informatyki", "Wydział Matematyki"],
         "Pracownik": ["Jan Kowalski", "Anna Nowak", "Tomasz Zieliński", "Maria Lewandowska"],
         "Student": ["Piotr Wiśniewski", "Katarzyna Wójcik"],
@@ -39,13 +39,13 @@ def zbuduj_graf():
                       "Statystyka", "Analiza Matematyczna", "Algebra Liniowa"],
         "Kierunek": ["Informatyka", "Matematyka"],
     }
-    for typ, nazwy in obiekty.items():
-        for nazwa in nazwy:
-            g.add_node(nazwa, type=typ)
+    for node_type, names in objects.items():
+        for name in names:
+            g.add_node(name, type=node_type)
 
     # --- Krawędzie (fakty) = zbiór E. Każdy fakt to trójka: (podmiot, RELACJA, obiekt). ---
     # Atrybut "relacja" to r(u, v): typ powiązania; razem |R| = 6 typów i |E| = 25 faktów.
-    fakty = [
+    facts = [
         # Wydział ZATRUDNIA pracownika
         ("Wydział Informatyki", "ZATRUDNIA", "Jan Kowalski"),
         ("Wydział Informatyki", "ZATRUDNIA", "Anna Nowak"),
@@ -78,8 +78,8 @@ def zbuduj_graf():
         ("Piotr Wiśniewski", "JEST_NA_KIERUNKU", "Informatyka"),
         ("Katarzyna Wójcik", "JEST_NA_KIERUNKU", "Matematyka"),
     ]
-    for podmiot, relacja, obiekt in fakty:
-        g.add_edge(podmiot, obiekt, relacja=relacja)
+    for subject, relation, obj in facts:
+        g.add_edge(subject, obj, relacja=relation)
 
     return g
 
@@ -88,64 +88,64 @@ def zbuduj_graf():
 # 2. FUNKCJE POMOCNICZE — chodzenie po grafie
 # ---------------------------------------------------------------------------
 
-def dokad(g, wezel, relacja):
-    """Węzły, do których prowadzi strzałka `relacja` WYCHODZĄCA z `wezel`.
+def targets(g, node, relation):
+    """Węzły, do których prowadzi strzałka `relation` WYCHODZĄCA z `node`.
 
-    dokad(v, ρ) = { u ∈ V : (v, u) ∈ E  i  r(v, u) = ρ }
+    targets(v, ρ) = { u ∈ V : (v, u) ∈ E  i  r(v, u) = ρ }
 
-    Przykład: dokad(g, "Jan Kowalski", "PROWADZI") -> przedmioty Jana.
+    Przykład: targets(g, "Jan Kowalski", "PROWADZI") -> przedmioty Jana.
     """
-    if wezel not in g:
+    if node not in g:
         return []  # nieznany obiekt — brak odpowiedzi zamiast błędu
-    return [cel for cel in g.successors(wezel) if g.edges[wezel, cel]["relacja"] == relacja]
+    return [target for target in g.successors(node) if g.edges[node, target]["relacja"] == relation]
 
 
-def skad(g, wezel, relacja):
-    """Węzły, z których strzałka `relacja` WCHODZI do `wezel`.
+def sources(g, node, relation):
+    """Węzły, z których strzałka `relation` WCHODZI do `node`.
 
-    skad(v, ρ) = { u ∈ V : (u, v) ∈ E  i  r(u, v) = ρ }
+    sources(v, ρ) = { u ∈ V : (u, v) ∈ E  i  r(u, v) = ρ }
 
-    Przykład: skad(g, "Jan Kowalski", "ZATRUDNIA") -> wydział Jana.
+    Przykład: sources(g, "Jan Kowalski", "ZATRUDNIA") -> wydział Jana.
     """
-    if wezel not in g:
+    if node not in g:
         return []  # nieznany obiekt — brak odpowiedzi zamiast błędu
-    return [zrodlo for zrodlo in g.predecessors(wezel) if g.edges[zrodlo, wezel]["relacja"] == relacja]
+    return [source for source in g.predecessors(node) if g.edges[source, node]["relacja"] == relation]
 
 
 # ---------------------------------------------------------------------------
 # 3. ZAPYTANIA — każde zwraca posortowaną listę odpowiedzi
 # ---------------------------------------------------------------------------
 
-def kto_prowadzi(g, przedmiot):
+def who_teaches(g, course):
     """Pytanie 1: kto prowadzi dany przedmiot? (strzałka PROWADZI wchodząca do przedmiotu)
 
-    wynik(p) = skad(p, PROWADZI) = { u ∈ V : (u, p) ∈ E  i  r(u, p) = PROWADZI }
+    wynik(p) = sources(p, PROWADZI) = { u ∈ V : (u, p) ∈ E  i  r(u, p) = PROWADZI }
     """
-    return sorted(skad(g, przedmiot, "PROWADZI"))
+    return sorted(sources(g, course, "PROWADZI"))
 
 
-def przedmioty_wydzialu(g, wydzial):
+def faculty_courses(g, faculty):
     """Pytanie 2: jakie przedmioty prowadzą pracownicy wydziału?
 
     Dwa kroki: wydział --ZATRUDNIA--> pracownik --PROWADZI--> przedmiot.
 
-    wynik(w) = ⋃ dokad(x, PROWADZI)  po wszystkich  x ∈ dokad(w, ZATRUDNIA)
+    wynik(w) = ⋃ targets(x, PROWADZI)  po wszystkich  x ∈ targets(w, ZATRUDNIA)
     """
-    wynik = set()  # zbiór, żeby ten sam przedmiot nie powtórzył się
-    for pracownik in dokad(g, wydzial, "ZATRUDNIA"):
-        wynik.update(dokad(g, pracownik, "PROWADZI"))
-    return sorted(wynik)
+    result = set()  # zbiór, żeby ten sam przedmiot nie powtórzył się
+    for employee in targets(g, faculty, "ZATRUDNIA"):
+        result.update(targets(g, employee, "PROWADZI"))
+    return sorted(result)
 
 
-def zapisy_studenta(g, student):
+def student_courses(g, student):
     """Pytanie 3: na jakie przedmioty zapisany jest student? (strzałki JEST_ZAPISANY_NA)
 
-    wynik(s) = dokad(s, JEST_ZAPISANY_NA)
+    wynik(s) = targets(s, JEST_ZAPISANY_NA)
     """
-    return sorted(dokad(g, student, "JEST_ZAPISANY_NA"))
+    return sorted(targets(g, student, "JEST_ZAPISANY_NA"))
 
 
-def wymagania(g, przedmiot):
+def prerequisites(g, course):
     """Pytanie 4: jakie przedmioty trzeba zaliczyć przed danym przedmiotem?
 
     Idziemy po strzałkach WYMAGA także pośrednio: Machine Learning wymaga Statystyki,
@@ -155,50 +155,50 @@ def wymagania(g, przedmiot):
     wynik(p) = { u ∈ V : w grafie (V, E_W) istnieje ścieżka p -> ... -> u }
     """
     # Bierzemy tylko krawędzie WYMAGA i szukamy wszystkich węzłów osiągalnych z przedmiotu.
-    krawedzie_wymaga = [(a, b) for a, b, r in g.edges(data="relacja") if r == "WYMAGA"]
-    graf_wymagan = g.edge_subgraph(krawedzie_wymaga)
-    if przedmiot not in graf_wymagan:
+    requires_edges = [(a, b) for a, b, r in g.edges(data="relacja") if r == "WYMAGA"]
+    requires_graph = g.edge_subgraph(requires_edges)
+    if course not in requires_graph:
         return []  # przedmiot nie ma żadnych wymagań
-    return sorted(nx.descendants(graf_wymagan, przedmiot))
+    return sorted(nx.descendants(requires_graph, course))
 
 
-def wspolpracownicy(g, pracownik):
+def coworkers(g, employee):
     """Pytanie 5: kto pracuje na tym samym wydziale co dany pracownik?
 
     Krok wstecz do wydziału (ZATRUDNIA), potem do wszystkich zatrudnionych tam osób.
 
-    wynik(p) = ( ⋃ dokad(w, ZATRUDNIA)  po wszystkich  w ∈ skad(p, ZATRUDNIA) ) ∖ {p}
+    wynik(p) = ( ⋃ targets(w, ZATRUDNIA)  po wszystkich  w ∈ sources(p, ZATRUDNIA) ) ∖ {p}
     """
-    wynik = set()
-    for wydzial in skad(g, pracownik, "ZATRUDNIA"):
-        wynik.update(dokad(g, wydzial, "ZATRUDNIA"))
-    wynik.discard(pracownik)  # sam pracownik nie jest swoim współpracownikiem
-    return sorted(wynik)
+    result = set()
+    for faculty in sources(g, employee, "ZATRUDNIA"):
+        result.update(targets(g, faculty, "ZATRUDNIA"))
+    result.discard(employee)  # sam pracownik nie jest swoim współpracownikiem
+    return sorted(result)
 
 
-def przedmioty_kierunku(g, kierunek):
+def program_courses(g, program):
     """Pytanie 6: jakie przedmioty są dostępne dla studentów kierunku? (ZAWIERA_PRZEDMIOT)
 
-    wynik(k) = dokad(k, ZAWIERA_PRZEDMIOT)
+    wynik(k) = targets(k, ZAWIERA_PRZEDMIOT)
     """
-    return sorted(dokad(g, kierunek, "ZAWIERA_PRZEDMIOT"))
+    return sorted(targets(g, program, "ZAWIERA_PRZEDMIOT"))
 
 
 # ---------------------------------------------------------------------------
 # 4. WIZUALIZACJA
 # ---------------------------------------------------------------------------
 
-KOLORY = {  # każdy typ obiektu ma własny kolor węzła
+COLORS = {  # każdy typ obiektu ma własny kolor węzła
     "Wydział": "tomato",
     "Pracownik": "gold",
     "Student": "lightgreen",
     "Przedmiot": "skyblue",
     "Kierunek": "plum",
 }
-ROZMIAR_WEZLA = 1600
+NODE_SIZE = 1600
 
 
-def rozmiesc_wezly(g):
+def layout_nodes(g):
     """Zwraca pozycje węzłów na rysunku (słownik: węzeł -> (x, y)).
 
     spring_layout rozmieszcza węzły jak kulki połączone sprężynami.
@@ -208,23 +208,23 @@ def rozmiesc_wezly(g):
     return nx.spring_layout(g, seed=241, k=2.2)
 
 
-def rysuj_graf(g):
+def draw_graph(g):
     """Rysuje graf: kolor węzła = typ obiektu, napis na strzałce = relacja."""
     plt.figure(figsize=(16, 11))
-    pozycje = rozmiesc_wezly(g)
+    positions = layout_nodes(g)
 
     # Węzły rysujemy typ po typie, żeby każdy typ miał swój kolor i pozycję w legendzie.
-    for typ, kolor in KOLORY.items():
-        wezly = [n for n, t in g.nodes(data="type") if t == typ]
-        nx.draw_networkx_nodes(g, pozycje, nodelist=wezly, node_color=kolor,
-                               node_size=ROZMIAR_WEZLA, label=typ)
+    for node_type, color in COLORS.items():
+        nodes = [n for n, t in g.nodes(data="type") if t == node_type]
+        nx.draw_networkx_nodes(g, positions, nodelist=nodes, node_color=color,
+                               node_size=NODE_SIZE, label=node_type)
 
     # Nazwy węzłów w dwóch liniach ("Tomasz\nZieliński"), żeby mieściły się w kółkach
     # i strzałki nie wchodziły w napisy.
-    napisy = {n: n.replace(" ", "\n", 1) for n in g}
-    nx.draw_networkx_labels(g, pozycje, labels=napisy, font_size=8)
-    nx.draw_networkx_edges(g, pozycje, node_size=ROZMIAR_WEZLA, arrowsize=15, edge_color="gray")
-    nx.draw_networkx_edge_labels(g, pozycje, edge_labels=nx.get_edge_attributes(g, "relacja"),
+    labels = {n: n.replace(" ", "\n", 1) for n in g}
+    nx.draw_networkx_labels(g, positions, labels=labels, font_size=8)
+    nx.draw_networkx_edges(g, positions, node_size=NODE_SIZE, arrowsize=15, edge_color="gray")
+    nx.draw_networkx_edge_labels(g, positions, edge_labels=nx.get_edge_attributes(g, "relacja"),
                                  font_size=7, font_color="darkred")  # nazwy relacji
 
     plt.title("Graf wiedzy uczelni")
@@ -240,35 +240,35 @@ def rysuj_graf(g):
 # ---------------------------------------------------------------------------
 
 def main():
-    g = zbuduj_graf()
+    g = build_graph()
 
-    typy_relacji = {r for _, _, r in g.edges(data="relacja")}
-    typy_obiektow = {t for _, t in g.nodes(data="type")}
+    relation_types = {r for _, _, r in g.edges(data="relacja")}
+    node_types = {t for _, t in g.nodes(data="type")}
     # |V| = liczba węzłów, |E| = liczba krawędzi, |T| = liczba typów, |R| = liczba relacji.
     print(f"Graf G = (V, E): |V| = {g.number_of_nodes()} obiektów "
-          f"(|T| = {len(typy_obiektow)} typów), |E| = {g.number_of_edges()} faktów "
-          f"(|R| = {len(typy_relacji)} typów relacji)\n")
+          f"(|T| = {len(node_types)} typów), |E| = {g.number_of_edges()} faktów "
+          f"(|R| = {len(relation_types)} typów relacji)\n")
 
     # Każda para: (pytanie, odpowiedź z funkcji-zapytania).
-    pytania = [
+    questions = [
         ("Kto prowadzi przedmiot Knowledge Representation?",
-         kto_prowadzi(g, "Knowledge Representation")),
+         who_teaches(g, "Knowledge Representation")),
         ("Jakie przedmioty prowadzą pracownicy Wydziału Informatyki?",
-         przedmioty_wydzialu(g, "Wydział Informatyki")),
+         faculty_courses(g, "Wydział Informatyki")),
         ("Na jakie przedmioty zapisany jest Piotr Wiśniewski?",
-         zapisy_studenta(g, "Piotr Wiśniewski")),
+         student_courses(g, "Piotr Wiśniewski")),
         ("Jakie przedmioty są wymagane przed rozpoczęciem kursu Machine Learning?",
-         wymagania(g, "Machine Learning")),
+         prerequisites(g, "Machine Learning")),
         ("Kto pracuje na tym samym wydziale co Jan Kowalski?",
-         wspolpracownicy(g, "Jan Kowalski")),
+         coworkers(g, "Jan Kowalski")),
         ("Jakie przedmioty są dostępne dla studentów kierunku Informatyka?",
-         przedmioty_kierunku(g, "Informatyka")),
+         program_courses(g, "Informatyka")),
     ]
-    for numer, (pytanie, odpowiedz) in enumerate(pytania, start=1):
-        print(f"{numer}. {pytanie}")
-        print("   -> " + (", ".join(odpowiedz) if odpowiedz else "brak"))
+    for number, (question, answer) in enumerate(questions, start=1):
+        print(f"{number}. {question}")
+        print("   -> " + (", ".join(answer) if answer else "brak"))
 
-    rysuj_graf(g)
+    draw_graph(g)
 
 
 # Uruchamiamy main() tylko przy starcie pliku (python main.py), a nie przy imporcie w testach.
