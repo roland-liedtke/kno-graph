@@ -4,6 +4,15 @@ Program:
 1. buduje skierowany graf wiedzy (węzły = obiekty, krawędzie = fakty),
 2. odpowiada na 6 pytań, przechodząc po krawędziach grafu,
 3. rysuje graf.
+
+Model matematyczny — graf skierowany G = (V, E):
+    V            zbiór węzłów (obiektów), |V| = 16
+    E ⊆ V × V    zbiór krawędzi (faktów): para (u, v) to strzałka u -> v, |E| = 25
+    typ: V -> T  typ węzła,     T = {Wydział, Pracownik, Student, Przedmiot, Kierunek}, |T| = 5
+    r:   E -> R  relacja krawędzi, R = {ZATRUDNIA, PROWADZI, JEST_ZAPISANY_NA, WYMAGA,
+                                        ZAWIERA_PRZEDMIOT, JEST_NA_KIERUNKU}, |R| = 6
+Fakt to trójka (u, r(u, v), v), np. (Jan Kowalski, PROWADZI, Knowledge Representation).
+W opisach funkcji ρ ∈ R oznacza nazwę relacji, np. ρ = PROWADZI.
 """
 
 import matplotlib.pyplot as plt
@@ -20,7 +29,7 @@ def zbuduj_graf():
     # np. "Wydział Informatyki" --ZATRUDNIA--> "Jan Kowalski".
     g = nx.DiGraph()
 
-    # --- Węzły (obiekty). Atrybut "type" mówi, do jakiej klasy należy obiekt. ---
+    # --- Węzły (obiekty) = zbiór V. Atrybut "type" to typ(v): klasa obiektu. ---
     # 5 typów: Wydział, Pracownik, Student, Przedmiot, Kierunek; razem 16 obiektów.
     obiekty = {
         "Wydział": ["Wydział Informatyki", "Wydział Matematyki"],
@@ -34,8 +43,8 @@ def zbuduj_graf():
         for nazwa in nazwy:
             g.add_node(nazwa, type=typ)
 
-    # --- Krawędzie (fakty). Każdy fakt to trójka: (podmiot, RELACJA, obiekt). ---
-    # Atrybut "relacja" mówi, jakiego typu jest powiązanie; razem 6 typów i 25 faktów.
+    # --- Krawędzie (fakty) = zbiór E. Każdy fakt to trójka: (podmiot, RELACJA, obiekt). ---
+    # Atrybut "relacja" to r(u, v): typ powiązania; razem |R| = 6 typów i |E| = 25 faktów.
     fakty = [
         # Wydział ZATRUDNIA pracownika
         ("Wydział Informatyki", "ZATRUDNIA", "Jan Kowalski"),
@@ -82,6 +91,8 @@ def zbuduj_graf():
 def dokad(g, wezel, relacja):
     """Węzły, do których prowadzi strzałka `relacja` WYCHODZĄCA z `wezel`.
 
+    dokad(v, ρ) = { u ∈ V : (v, u) ∈ E  i  r(v, u) = ρ }
+
     Przykład: dokad(g, "Jan Kowalski", "PROWADZI") -> przedmioty Jana.
     """
     if wezel not in g:
@@ -91,6 +102,8 @@ def dokad(g, wezel, relacja):
 
 def skad(g, wezel, relacja):
     """Węzły, z których strzałka `relacja` WCHODZI do `wezel`.
+
+    skad(v, ρ) = { u ∈ V : (u, v) ∈ E  i  r(u, v) = ρ }
 
     Przykład: skad(g, "Jan Kowalski", "ZATRUDNIA") -> wydział Jana.
     """
@@ -104,7 +117,10 @@ def skad(g, wezel, relacja):
 # ---------------------------------------------------------------------------
 
 def kto_prowadzi(g, przedmiot):
-    """Pytanie 1: kto prowadzi dany przedmiot? (strzałka PROWADZI wchodząca do przedmiotu)"""
+    """Pytanie 1: kto prowadzi dany przedmiot? (strzałka PROWADZI wchodząca do przedmiotu)
+
+    wynik(p) = skad(p, PROWADZI) = { u ∈ V : (u, p) ∈ E  i  r(u, p) = PROWADZI }
+    """
     return sorted(skad(g, przedmiot, "PROWADZI"))
 
 
@@ -112,6 +128,8 @@ def przedmioty_wydzialu(g, wydzial):
     """Pytanie 2: jakie przedmioty prowadzą pracownicy wydziału?
 
     Dwa kroki: wydział --ZATRUDNIA--> pracownik --PROWADZI--> przedmiot.
+
+    wynik(w) = ⋃ dokad(x, PROWADZI)  po wszystkich  x ∈ dokad(w, ZATRUDNIA)
     """
     wynik = set()  # zbiór, żeby ten sam przedmiot nie powtórzył się
     for pracownik in dokad(g, wydzial, "ZATRUDNIA"):
@@ -120,7 +138,10 @@ def przedmioty_wydzialu(g, wydzial):
 
 
 def zapisy_studenta(g, student):
-    """Pytanie 3: na jakie przedmioty zapisany jest student? (strzałki JEST_ZAPISANY_NA)"""
+    """Pytanie 3: na jakie przedmioty zapisany jest student? (strzałki JEST_ZAPISANY_NA)
+
+    wynik(s) = dokad(s, JEST_ZAPISANY_NA)
+    """
     return sorted(dokad(g, student, "JEST_ZAPISANY_NA"))
 
 
@@ -129,6 +150,9 @@ def wymagania(g, przedmiot):
 
     Idziemy po strzałkach WYMAGA także pośrednio: Machine Learning wymaga Statystyki,
     a Statystyka wymaga Analizy Matematycznej — więc obie są potrzebne przed ML.
+
+    E_W = { e ∈ E : r(e) = WYMAGA }             (tylko krawędzie WYMAGA)
+    wynik(p) = { u ∈ V : w grafie (V, E_W) istnieje ścieżka p -> ... -> u }
     """
     # Bierzemy tylko krawędzie WYMAGA i szukamy wszystkich węzłów osiągalnych z przedmiotu.
     krawedzie_wymaga = [(a, b) for a, b, r in g.edges(data="relacja") if r == "WYMAGA"]
@@ -142,6 +166,8 @@ def wspolpracownicy(g, pracownik):
     """Pytanie 5: kto pracuje na tym samym wydziale co dany pracownik?
 
     Krok wstecz do wydziału (ZATRUDNIA), potem do wszystkich zatrudnionych tam osób.
+
+    wynik(p) = ( ⋃ dokad(w, ZATRUDNIA)  po wszystkich  w ∈ skad(p, ZATRUDNIA) ) ∖ {p}
     """
     wynik = set()
     for wydzial in skad(g, pracownik, "ZATRUDNIA"):
@@ -151,7 +177,10 @@ def wspolpracownicy(g, pracownik):
 
 
 def przedmioty_kierunku(g, kierunek):
-    """Pytanie 6: jakie przedmioty są dostępne dla studentów kierunku? (ZAWIERA_PRZEDMIOT)"""
+    """Pytanie 6: jakie przedmioty są dostępne dla studentów kierunku? (ZAWIERA_PRZEDMIOT)
+
+    wynik(k) = dokad(k, ZAWIERA_PRZEDMIOT)
+    """
     return sorted(dokad(g, kierunek, "ZAWIERA_PRZEDMIOT"))
 
 
@@ -215,8 +244,10 @@ def main():
 
     typy_relacji = {r for _, _, r in g.edges(data="relacja")}
     typy_obiektow = {t for _, t in g.nodes(data="type")}
-    print(f"Graf: {g.number_of_nodes()} obiektów ({len(typy_obiektow)} typów), "
-          f"{g.number_of_edges()} faktów ({len(typy_relacji)} typów relacji)\n")
+    # |V| = liczba węzłów, |E| = liczba krawędzi, |T| = liczba typów, |R| = liczba relacji.
+    print(f"Graf G = (V, E): |V| = {g.number_of_nodes()} obiektów "
+          f"(|T| = {len(typy_obiektow)} typów), |E| = {g.number_of_edges()} faktów "
+          f"(|R| = {len(typy_relacji)} typów relacji)\n")
 
     # Każda para: (pytanie, odpowiedź z funkcji-zapytania).
     pytania = [
