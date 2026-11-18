@@ -13,109 +13,109 @@ import numpy as np  # noqa: E402
 import main  # noqa: E402
 
 
-class TestGrafWiedzy(unittest.TestCase):
+class TestKnowledgeGraph(unittest.TestCase):
     def setUp(self):
-        self.g = main.zbuduj_graf()
-        self.typy = {t for _, t in self.g.nodes(data="type")}
-        self.relacje = {r for _, _, r in self.g.edges(data="relacja")}
+        self.g = main.build_graph()
+        self.node_types = {t for _, t in self.g.nodes(data="type")}
+        self.relations = {r for _, _, r in self.g.edges(data="relacja")}
 
-    def test_graf_spelnia_minimalne_wymagania(self):
+    def test_graph_meets_minimum_requirements(self):
         self.assertTrue(self.g.is_directed())
         self.assertGreaterEqual(len({t for _, t in self.g.nodes(data="type")}), 5)
         self.assertGreaterEqual(self.g.number_of_nodes(), 15)
         self.assertGreaterEqual(len({r for _, _, r in self.g.edges(data="relacja")}), 6)
         self.assertGreaterEqual(self.g.number_of_edges(), 20)
 
-    def test_liczby_we_wzorach_opisu_zgadzaja_sie_z_grafem(self):
-        liczby = {"V": self.g.number_of_nodes(), "E": self.g.number_of_edges(),
-                  "T": len(self.typy), "R": len(self.relacje)}
-        for symbol, liczba in liczby.items():
+    def test_counts_in_docstring_formulas_match_graph(self):
+        counts = {"V": self.g.number_of_nodes(), "E": self.g.number_of_edges(),
+                  "T": len(self.node_types), "R": len(self.relations)}
+        for symbol, count in counts.items():
             with self.subTest(symbol=symbol):
                 # \b = koniec liczby, żeby "|V| = 16" nie pasowało do "|V| = 160"
-                self.assertRegex(main.__doc__, rf"\|{symbol}\| = {liczba}\b")
+                self.assertRegex(main.__doc__, rf"\|{symbol}\| = {count}\b")
 
-    def test_zbiory_T_i_R_w_opisie_zgadzaja_sie_z_grafem(self):
-        for symbol, w_grafie in (("T", self.typy), ("R", self.relacje)):
+    def test_sets_T_and_R_in_docstring_match_graph(self):
+        for symbol, in_graph in (("T", self.node_types), ("R", self.relations)):
             with self.subTest(symbol=symbol):
                 # zawartość wyliczenia "T = {...}" z opisu (może zajmować kilka linii)
-                wyliczenie = re.search(rf"{symbol} = \{{(.*?)\}}", main.__doc__, re.S)
-                self.assertIsNotNone(wyliczenie)
-                w_opisie = {nazwa.strip() for nazwa in wyliczenie.group(1).split(",")}
-                self.assertEqual(w_opisie, w_grafie)
+                listing = re.search(rf"{symbol} = \{{(.*?)\}}", main.__doc__, re.S)
+                self.assertIsNotNone(listing)
+                in_docstring = {name.strip() for name in listing.group(1).split(",")}
+                self.assertEqual(in_docstring, in_graph)
 
-    def test_kazdy_wezel_ma_typ_i_kazda_krawedz_relacje(self):
+    def test_every_node_has_type_and_every_edge_has_relation(self):
         self.assertTrue(all(t for _, t in self.g.nodes(data="type")))
         self.assertTrue(all(r for _, _, r in self.g.edges(data="relacja")))
 
-    def test_kto_prowadzi_knowledge_representation(self):
-        self.assertEqual(main.kto_prowadzi(self.g, "Knowledge Representation"), ["Jan Kowalski"])
+    def test_who_teaches_knowledge_representation(self):
+        self.assertEqual(main.who_teaches(self.g, "Knowledge Representation"), ["Jan Kowalski"])
 
-    def test_przedmioty_wydzialu_informatyki(self):
-        self.assertEqual(main.przedmioty_wydzialu(self.g, "Wydział Informatyki"),
+    def test_faculty_courses_computer_science(self):
+        self.assertEqual(main.faculty_courses(self.g, "Wydział Informatyki"),
                          ["Knowledge Representation", "Machine Learning", "Programowanie w Pythonie"])
 
-    def test_przedmioty_wydzialu_gdy_pracownik_prowadzi_kilka(self):
+    def test_faculty_courses_when_employee_teaches_several(self):
         # Maria Lewandowska (jedyna na Wydziale Matematyki) prowadzi 3 przedmioty.
-        self.assertEqual(main.przedmioty_wydzialu(self.g, "Wydział Matematyki"),
+        self.assertEqual(main.faculty_courses(self.g, "Wydział Matematyki"),
                          ["Algebra Liniowa", "Analiza Matematyczna", "Statystyka"])
 
-    def test_przedmioty_wydzialu_bez_powtorzen(self):
+    def test_faculty_courses_without_duplicates(self):
         # Dwie osoby z Wydziału Informatyki prowadzą ten sam przedmiot -> przedmiot raz.
         self.g.add_edge("Anna Nowak", "Knowledge Representation", relacja="PROWADZI")
-        self.assertEqual(main.przedmioty_wydzialu(self.g, "Wydział Informatyki"),
+        self.assertEqual(main.faculty_courses(self.g, "Wydział Informatyki"),
                          ["Knowledge Representation", "Machine Learning", "Programowanie w Pythonie"])
 
-    def test_zapisy_piotra_wisniewskiego(self):
-        self.assertEqual(main.zapisy_studenta(self.g, "Piotr Wiśniewski"),
+    def test_student_courses_piotr_wisniewski(self):
+        self.assertEqual(main.student_courses(self.g, "Piotr Wiśniewski"),
                          ["Knowledge Representation", "Machine Learning"])
 
-    def test_wymagania_machine_learning_takze_posrednie(self):
-        self.assertEqual(main.wymagania(self.g, "Machine Learning"),
+    def test_prerequisites_machine_learning_including_indirect(self):
+        self.assertEqual(main.prerequisites(self.g, "Machine Learning"),
                          ["Analiza Matematyczna", "Programowanie w Pythonie", "Statystyka"])
 
-    def test_wymagania_przedmiotu_bez_wymagan(self):
-        self.assertEqual(main.wymagania(self.g, "Knowledge Representation"), [])
+    def test_prerequisites_course_without_prerequisites(self):
+        self.assertEqual(main.prerequisites(self.g, "Knowledge Representation"), [])
 
-    def test_wspolpracownicy_jana_kowalskiego(self):
-        self.assertEqual(main.wspolpracownicy(self.g, "Jan Kowalski"),
+    def test_coworkers_jan_kowalski(self):
+        self.assertEqual(main.coworkers(self.g, "Jan Kowalski"),
                          ["Anna Nowak", "Tomasz Zieliński"])
 
-    def test_przedmioty_kierunku_informatyka(self):
-        self.assertEqual(main.przedmioty_kierunku(self.g, "Informatyka"),
+    def test_program_courses_computer_science(self):
+        self.assertEqual(main.program_courses(self.g, "Informatyka"),
                          ["Knowledge Representation", "Machine Learning",
                           "Programowanie w Pythonie", "Statystyka"])
 
-    def test_nieznany_obiekt_daje_pusta_odpowiedz(self):
-        for zapytanie in (main.kto_prowadzi, main.przedmioty_wydzialu, main.zapisy_studenta,
-                          main.wymagania, main.wspolpracownicy, main.przedmioty_kierunku):
-            with self.subTest(zapytanie=zapytanie.__name__):
-                self.assertEqual(zapytanie(self.g, "Fizyka"), [])
+    def test_unknown_object_gives_empty_answer(self):
+        for query in (main.who_teaches, main.faculty_courses, main.student_courses,
+                      main.prerequisites, main.coworkers, main.program_courses):
+            with self.subTest(query=query.__name__):
+                self.assertEqual(query(self.g, "Fizyka"), [])
 
 
-class TestRysunek(unittest.TestCase):
-    def test_zadna_krawedz_nie_przechodzi_pod_obcym_wezlem(self):
-        g = main.zbuduj_graf()
-        pozycje = main.rozmiesc_wezly(g)
-        # Geometria przybliżona: ten sam rozmiar figury, dpi i węzły co w rysuj_graf, ale bez
+class TestDrawing(unittest.TestCase):
+    def test_no_edge_passes_under_foreign_node(self):
+        g = main.build_graph()
+        positions = main.layout_nodes(g)
+        # Geometria przybliżona: ten sam rozmiar figury, dpi i węzły co w draw_graph, ale bez
         # tight_layout, legendy i axis("off"), które lekko przesuwają piksele. Na prawdziwym
         # rysunku najbliższa krawędź jest ok. 1,7 promienia od obcego węzła, więc zapas wystarcza.
         fig, ax = plt.subplots(figsize=(16, 11), dpi=120)
-        nx.draw_networkx_nodes(g, pozycje, ax=ax, node_size=main.ROZMIAR_WEZLA)
+        nx.draw_networkx_nodes(g, positions, ax=ax, node_size=main.NODE_SIZE)
         fig.canvas.draw()
-        piksele = {n: ax.transData.transform(pozycje[n]) for n in g}
+        pixels = {n: ax.transData.transform(positions[n]) for n in g}
         plt.close(fig)
-        promien = main.ROZMIAR_WEZLA ** 0.5 / 2 * fig.dpi / 72  # node_size to pole w pt²
+        radius = main.NODE_SIZE ** 0.5 / 2 * fig.dpi / 72  # node_size to pole w pt²
 
         for a, b in g.edges:
-            A, B = piksele[a], piksele[b]
+            A, B = pixels[a], pixels[b]
             for n in g:
                 if n in (a, b):
                     continue
                 # najbliższy punkt odcinka A-B do środka węzła n
-                t = np.clip(np.dot(piksele[n] - A, B - A) / np.dot(B - A, B - A), 0, 1)
-                odleglosc = np.linalg.norm(A + t * (B - A) - piksele[n])
-                with self.subTest(krawedz=(a, b), wezel=n):
-                    self.assertGreater(odleglosc, promien)
+                t = np.clip(np.dot(pixels[n] - A, B - A) / np.dot(B - A, B - A), 0, 1)
+                distance = np.linalg.norm(A + t * (B - A) - pixels[n])
+                with self.subTest(edge=(a, b), node=n):
+                    self.assertGreater(distance, radius)
 
 
 if __name__ == "__main__":

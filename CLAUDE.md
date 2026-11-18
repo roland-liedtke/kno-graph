@@ -27,7 +27,7 @@ Na maszynie bez ekranu `plt.show()` nic nie pokaże — rysunek zapisuje się te
 `graf_wiedzy.png` (plik w `.gitignore`).
 
 ## Konwencje
-- Nazwy, komentarze i komunikaty po polsku.
+- Nazewnictwo (identyfikatory po angielsku, opisy po polsku): `.claude/rules/style.md`.
 - Zapytania przyjmują graf jako argument i zwracają posortowaną listę — wypisywanie jest
   w `main()`, dzięki czemu funkcje da się testować.
 
